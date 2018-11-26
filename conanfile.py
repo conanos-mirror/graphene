@@ -24,11 +24,23 @@ class GrapheneConan(ConanFile):
 
     source_subfolder = "source_subfolder"
 
+    def is_msvc(self):
+        return  self.settings.compiler == 'Visual Studio'
+
+
+    def build_requirements(self):
+        if self.is_msvc:
+            #self.build_requires("cygwin_installer/2.9.0@bincrafters/stable")
+            self.build_requires("msys2_installer/20161025@bincrafters/stable")
+
+    def requirements(self):
+        assert(0)
+
     def source(self):
         url_ = 'https://github.com/ebassi/graphene/archive/{version}.tar.gz'
         tools.get(url_.format(version=self.version))
         os.rename("%s-%s"%(self.name, self.version), self.source_subfolder)
-        if self.settings.compiler == 'Visual Studio':
+        if self.is_msvc:
             to_unicode(os.path.join(self.source_subfolder,'src/graphene-euler.c'))
 
     def build(self):
