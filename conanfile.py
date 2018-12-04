@@ -40,17 +40,6 @@ class GrapheneConan(ConanFile):
     def configure(self):
         del self.settings.compiler.libcxx
 
-    #def is_msvc(self):
-    #    return  self.settings.compiler == 'Visual Studio'
-
-
-    #def build_requirements(self):
-    #    if self.is_msvc:
-    #        #self.build_requires("cygwin_installer/2.9.0@bincrafters/stable")
-    #        self.build_requires("msys2_installer/20161025@bincrafters/stable")
-
-    #def requirements(self):
-    #    assert(0)
     def build_requirements(self):
         self.build_requires("libffi/3.299999@conanos/stable")
 
@@ -67,31 +56,25 @@ class GrapheneConan(ConanFile):
         pkg_config_paths=[ os.path.join(self.deps_cpp_info[i].rootpath, "lib", "pkgconfig") for i in ["glib","libffi"] ]
         prefix = os.path.join(self.build_folder, self._build_subfolder, "install")
         defs = {'prefix':prefix, 'introspection':'false'}
+        meson = Meson(self)
         if self.settings.os == "Linux":
             defs.update({'libdir':'lib'})
-        meson = Meson(self)
-        meson.configure(defs=defs, source_dir = self._source_subfolder,
-                        build_dir=self._build_subfolder,pkg_config_paths=pkg_config_paths)
-        meson.build()
-        self.run('ninja -C {0} install'.format(meson.build_dir))
-
-    #def gcc_build(self):
-    #    with tools.chdir(self._source_subfolder):
-    #        _args = ['--prefix=%s/builddir'%(os.getcwd()), '--libdir=%s/builddir/lib'%(os.getcwd()), '--disable-maintainer-mode',
-    #                 '--disable-silent-rules', '--disable-arm-neon']
-    #        if self.options.shared:
-    #            _args.extend(['--enable-shared=yes','--enable-static=no'])
-    #        else:
-    #            _args.extend(['--enable-shared=no','--enable-static=yes'])
-
-    #        self.run('sh autogen.sh %s'%(' '.join(_args)))#space
-    #        self.run('make -j2')
-    #        self.run('make install')
+            libpath = [ os.path.join(self.deps_cpp_info[i].rootpath, "lib") for i in ["glib","libffi"] ]
+            with tools.environment_append({
+                'LD_LIBRARY_PATH' : os.pathsep.join(libpath)
+                }):
+                meson.configure(defs=defs, source_dir = self._source_subfolder,
+                                build_dir=self._build_subfolder,pkg_config_paths=pkg_config_paths)
+                meson.build()
+                self.run('ninja -C {0} install'.format(meson.build_dir))
+        
+        if self.settings.os == 'Windows':
+            meson.configure(defs=defs, source_dir = self._source_subfolder,
+                                build_dir=self._build_subfolder,pkg_config_paths=pkg_config_paths)
+            meson.build()
+            self.run('ninja -C {0} install'.format(meson.build_dir))
 
     def package(self):
-        #if tools.os_info.is_linux:
-        #    with tools.chdir(self._source_subfolder):
-        #        self.copy("*", src="%s/builddir"%(os.getcwd()))
         self.copy("*", dst=self.package_folder, src=os.path.join(self.build_folder,self._build_subfolder, "install"))
 
     def package_info(self):
