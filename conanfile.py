@@ -25,8 +25,7 @@ class GrapheneConan(ConanFile):
         "shared": [True, False],
         'fPIC': [True, False]
     }
-    default_options = { 'shared': False, 'fPIC': True }
-    requires = "glib/2.58.1@conanos/stable"
+    default_options = { 'shared': True, 'fPIC': True }
 
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
@@ -34,11 +33,14 @@ class GrapheneConan(ConanFile):
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
-
-        config_scheme(self)
     
     def configure(self):
         del self.settings.compiler.libcxx
+
+        config_scheme(self)
+    
+    def requirements(self):
+        self.requires.add("glib/2.58.1@conanos/stable")
 
     def build_requirements(self):
         self.build_requires("libffi/3.299999@conanos/stable")
